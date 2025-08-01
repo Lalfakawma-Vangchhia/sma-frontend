@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import apiClient from '../services/apiClient';
 import { fileToBase64 } from './FacebookUtils';
@@ -7,7 +7,7 @@ import './igBulkComposer.css';
 import { useNavigate } from 'react-router-dom';
 
 function IgBulkComposer({ selectedAccount, onClose }) {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const { addNotification } = useNotifications();
 
   // Strategy step state
@@ -32,7 +32,7 @@ function IgBulkComposer({ selectedAccount, onClose }) {
   // Composer grid state
   const [composerRows, setComposerRows] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
-  const [editingCell, setEditingCell] = useState(null);
+  // const [editingCell, setEditingCell] = useState(null);
   const [dragStartRow, setDragStartRow] = useState(null);
 
   // Post type state
@@ -51,7 +51,7 @@ function IgBulkComposer({ selectedAccount, onClose }) {
   const [mediaPreviewModal, setMediaPreviewModal] = useState(null);
   const [carouselReorderModal, setCarouselReorderModal] = useState(null);
   const [thumbnailPreviewModal, setThumbnailPreviewModal] = useState(null);
-  const [scheduledGridRows, setScheduledGridRows] = useState([]);
+  const [setScheduledGridRows] = useState([]);
   const navigate = useNavigate();
 
   // Prompt templates for Instagram
@@ -114,7 +114,8 @@ function IgBulkComposer({ selectedAccount, onClose }) {
         scheduledDate: formattedDate,
         scheduledTime: strategyData.timeSlot,
         status: 'draft',
-        isSelected: false
+        isSelected: false,
+        carouselUploading: false
       });
     } else {
       // Fix: include the end date by using <= in the comparison
@@ -160,7 +161,8 @@ function IgBulkComposer({ selectedAccount, onClose }) {
             scheduledDate: formattedDate,
             scheduledTime: strategyData.timeSlot,
             status: 'draft',
-            isSelected: false
+            isSelected: false,
+            carouselUploading: false
           });
           rowCount++;
         }
@@ -742,30 +744,23 @@ function IgBulkComposer({ selectedAccount, onClose }) {
       return;
     }
 
-    try {
-      console.log(`🖼️ Uploading ${files.length} carousel images for row ${rowId}`);
+    // Set loading state
+    setComposerRows(prev => prev.map(r => r.id === rowId ? { ...r, carouselUploading: true } : r));
 
+    try {
       const imageUrls = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-
-        // Validate file type
         if (!file.type.startsWith('image/')) {
           alert(`File ${file.name} is not an image. Please select only image files.`);
           continue;
         }
-
-        console.log(`📤 Uploading carousel image ${i + 1}/${files.length}: ${file.name}`);
-
-        // Upload to Cloudinary
         const uploadResponse = await apiClient.uploadImageToCloudinary(file);
-
         if (uploadResponse && uploadResponse.success && uploadResponse.data && uploadResponse.data.url) {
           imageUrls.push(uploadResponse.data.url);
-          console.log(`✅ Carousel image ${i + 1} uploaded: ${uploadResponse.data.url}`);
         } else {
-          console.error(`❌ Failed to upload carousel image ${i + 1}:`, uploadResponse);
           alert(`Failed to upload image ${file.name}. Please try again.`);
+          setComposerRows(prev => prev.map(r => r.id === rowId ? { ...r, carouselUploading: false } : r));
           return;
         }
       }
@@ -781,22 +776,22 @@ function IgBulkComposer({ selectedAccount, onClose }) {
                   const hasCaption = (r.caption || '').trim();
                   const hasEnoughImages = imageUrls.length >= 2;
                   return hasCaption && hasEnoughImages ? 'ready' : 'draft';
-                })()
+                })(),
+                carouselUploading: false
               }
               : r
           )
         );
-        console.log(`✅ Successfully uploaded ${imageUrls.length} carousel images for row ${rowId}`);
       } else {
         alert(`Please upload at least ${minImages} images for a carousel post.`);
+        setComposerRows(prev => prev.map(r => r.id === rowId ? { ...r, carouselUploading: false } : r));
       }
 
-      // Clear the file input
       if (carouselInputRefs.current[rowId]) {
         carouselInputRefs.current[rowId].value = '';
       }
     } catch (error) {
-      console.error('Error processing carousel upload:', error);
+      setComposerRows(prev => prev.map(r => r.id === rowId ? { ...r, carouselUploading: false } : r));
       alert('Error uploading carousel images. Please try again.');
     }
   };
@@ -882,46 +877,46 @@ function IgBulkComposer({ selectedAccount, onClose }) {
     console.log(`🗑️ Removed carousel images for row ${rowId}`);
   };
 
-  const handleDuplicateRow = (rowId) => {
-    const rowToDuplicate = composerRows.find(row => row.id === rowId);
-    if (rowToDuplicate) {
-      const newRow = {
-        ...rowToDuplicate,
-        id: `row-${Date.now()}-${Math.random()}`,
-        scheduledDate: new Date(rowToDuplicate.scheduledDate).toISOString().split('T')[0],
-        postType: rowToDuplicate.postType ? rowToDuplicate.postType.toLowerCase() : 'photo'
-      };
-      setComposerRows(prev => [...prev, newRow]);
-    }
-  };
+  // const handleDuplicateRow = (rowId) => {
+  //   const rowToDuplicate = composerRows.find(row => row.id === rowId);
+  //   if (rowToDuplicate) {
+  //     const newRow = {
+  //       ...rowToDuplicate,
+  //       id: `row-${Date.now()}-${Math.random()}`,
+  //       scheduledDate: new Date(rowToDuplicate.scheduledDate).toISOString().split('T')[0],
+  //       postType: rowToDuplicate.postType ? rowToDuplicate.postType.toLowerCase() : 'photo'
+  //     };
+  //     setComposerRows(prev => [...prev, newRow]);
+  //   }
+  // };
 
-  const handleDeleteRow = (rowId) => {
-    setComposerRows(prev => prev.filter(row => row.id !== rowId));
-    setSelectedRows(prev => prev.filter(id => id !== rowId));
-  };
+  // const handleDeleteRow = (rowId) => {
+  //   setComposerRows(prev => prev.filter(row => row.id !== rowId));
+  //   setSelectedRows(prev => prev.filter(id => id !== rowId));
+  // };
 
   const handleBulkDelete = () => {
     setComposerRows(prev => prev.filter(row => !selectedRows.includes(row.id)));
     setSelectedRows([]);
   };
 
-  const handleTimeShift = (direction) => {
-    setComposerRows(prev =>
-      prev.map(row => {
-        if (selectedRows.includes(row.id)) {
-          const [hours, minutes] = row.scheduledTime.split(':');
-          let newHours = parseInt(hours) + (direction === 'forward' ? 1 : -1);
-          if (newHours < 0) newHours = 23;
-          if (newHours > 23) newHours = 0;
-          return {
-            ...row,
-            scheduledTime: `${newHours.toString().padStart(2, '0')}:${minutes}`
-          };
-        }
-        return row;
-      })
-    );
-  };
+  // const handleTimeShift = (direction) => {
+  //   setComposerRows(prev =>
+  //     prev.map(row => {
+  //       if (selectedRows.includes(row.id)) {
+  //         const [hours, minutes] = row.scheduledTime.split(':');
+  //         let newHours = parseInt(hours) + (direction === 'forward' ? 1 : -1);
+  //         if (newHours < 0) newHours = 23;
+  //         if (newHours > 23) newHours = 0;
+  //         return {
+  //           ...row,
+  //           scheduledTime: `${newHours.toString().padStart(2, '0')}:${minutes}`
+  //         };
+  //       }
+  //       return row;
+  //     })
+  //   );
+  // };
 
   const handleDragStart = (rowId) => setDragStartRow(rowId);
   const handleDragOver = (e) => e.preventDefault();
@@ -1750,7 +1745,7 @@ function IgBulkComposer({ selectedAccount, onClose }) {
 
                             {/* Carousel Options */}
                             {row.postType === 'carousel' && (
-                              <>
+                              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
                                 <button
                                   onClick={() => handleGenerateCarousel(row.id)}
                                   className="ig-media-option-btn generate-btn"
@@ -1769,16 +1764,28 @@ function IgBulkComposer({ selectedAccount, onClose }) {
                                   onChange={(e) => handleCarouselUpload(row.id, e)}
                                   className="ig-media-input"
                                   id={`ig-carousel-upload-${row.id}`}
+                                  disabled={row.carouselUploading}
                                 />
-                                <label htmlFor={`ig-carousel-upload-${row.id}`} className="ig-media-option-btn upload-btn">
+                                <label htmlFor={`ig-carousel-upload-${row.id}`} className="ig-media-option-btn upload-btn" style={{ opacity: row.carouselUploading ? 0.6 : 1, pointerEvents: row.carouselUploading ? 'none' : 'auto', position: 'relative' }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="7,10 12,15 17,10" />
                                     <line x1="12" y1="15" x2="12" y2="3" />
                                   </svg>
                                   Upload {row.carouselImageCount || 2} Images
+                                  {row.carouselUploading && (
+                                    <span style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.7)', zIndex: 2 }}>
+                                      <span className="ig-spinner" style={{ margin: 0 }}>
+                                        <svg width="24" height="24" viewBox="0 0 50 50">
+                                          <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
+                                            <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+                                          </circle>
+                                        </svg>
+                                      </span>
+                                    </span>
+                                  )}
                                 </label>
-                              </>
+                              </div>
                             )}
                           </div>
                         ) : (
@@ -1789,8 +1796,20 @@ function IgBulkComposer({ selectedAccount, onClose }) {
                             <div className="ig-media-preview">
                               {/* Carousel Preview */}
                               {row.postType === 'carousel' && row.carouselImages && row.carouselImages.length > 0 ? (
-                                <div className="ig-carousel-preview">
-                                  <div className="ig-carousel-grid">
+                                <div className="ig-carousel-preview" style={{ position: 'relative' }}>
+                                  {row.carouselUploading && (
+                                    <div className="ig-carousel-loading-overlay">
+                                      <div className="ig-spinner">
+                                        <svg width="40" height="40" viewBox="0 0 50 50">
+                                          <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
+                                            <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+                                          </circle>
+                                        </svg>
+                                        <span>Loading images...</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="ig-carousel-grid" style={row.carouselUploading ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
                                     {row.carouselImages.slice(0, row.carouselImageCount || 3).map((url, index) => (
                                       <div key={index} className="ig-carousel-item">
                                         <img src={url} alt={`Carousel ${index + 1}`} />

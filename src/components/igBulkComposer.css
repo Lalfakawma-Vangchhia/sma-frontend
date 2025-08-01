@@ -1,3 +1,38 @@
+/* Carousel loading overlay styles */
+.ig-carousel-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.ig-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ig-spinner svg {
+  animation: ig-spinner-rotate 1s linear infinite;
+}
+
+@keyframes ig-spinner-rotate {
+  100% { transform: rotate(360deg); }
+}
+
+.ig-spinner span {
+  color: #555;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
 /* Force style reloading and ensure component precedence */
 .ig-bulk-composer,
 .ig-bulk-composer * {

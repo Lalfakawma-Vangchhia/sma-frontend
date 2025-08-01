@@ -1428,7 +1428,7 @@ const InstagramPage = () => {
         } catch (err) {
           console.warn('Failed to refresh account info after post:', err);
         }
-        setActiveTab('scheduled-posts');
+        // Do NOT change tab after photo or reel publish
       } else {
         let errorMsg = `Failed to create post: ${response.error || 'Unknown error'}`;
         if (response.details) {
@@ -2319,10 +2319,10 @@ const InstagramPage = () => {
                       <textarea
                         value={caption}
                         onChange={e => setCaption(e.target.value)}
-                        placeholder={autoGenerateCaption ? "Caption will be generated..." : "Write your caption..."}
+                        placeholder={autoGenerateCaption && !caption ? "Caption will be generated..." : "Write your caption..."}
                         rows={3}
                         className="post-textarea"
-                        disabled={autoGenerateCaption}
+                        disabled={autoGenerateCaption && !caption}
                       />
                     </div>
                   </div>
@@ -2519,10 +2519,10 @@ const InstagramPage = () => {
                       <textarea
                         value={carouselCaption}
                         onChange={e => setCarouselCaption(e.target.value)}
-                        placeholder={autoGenerateCaption ? "Caption will be generated..." : "Write your caption..."}
+                        placeholder={autoGenerateCaption && !carouselCaption ? "Caption will be generated..." : "Write your caption..."}
                         rows={3}
                         className="post-textarea"
-                        disabled={autoGenerateCaption}
+                        disabled={autoGenerateCaption && !carouselCaption}
                       />
                     </div>
                   </div>
@@ -2598,17 +2598,12 @@ const InstagramPage = () => {
                       setLoading(true);
                       setMessage('Publishing carousel post...');
                       try {
-                        console.log('🔍 DEBUG: Carousel publish - selectedAccount:', selectedAccount);
-                        console.log('🔍 DEBUG: Carousel publish - carouselImages:', carouselImages);
-                        console.log('🔍 DEBUG: Carousel publish - carouselCount:', carouselCount);
-
+                        // No redirect/navigation after publish, just reset form and show message
                         const finalCaption = autoGenerateCaption && captionPrompt.trim() ?
                           await (async () => {
                             const res = await apiClient.generateInstagramCaption(captionPrompt.trim());
                             return res.content || carouselCaption || 'Check out this amazing carousel!';
                           })() : carouselCaption;
-
-                        console.log('🔍 DEBUG: Carousel publish - finalCaption:', finalCaption);
 
                         const response = await apiClient.postInstagramCarousel(
                           selectedAccount.platform_user_id,
@@ -2624,6 +2619,7 @@ const InstagramPage = () => {
                           setAutoGenerateCaption(false);
                           setAiPrompt('');
                           loadUserMedia(selectedAccount.platform_user_id);
+                          // Do NOT navigate to ScheduledPostHistory or change tab
                         } else {
                           setMessage('Failed to publish carousel: ' + (response.error || 'Unknown error'));
                         }
@@ -2765,10 +2761,10 @@ const InstagramPage = () => {
                       <textarea
                         value={reelCaption}
                         onChange={e => setReelCaption(e.target.value)}
-                        placeholder={reelAutoGenerateCaption ? "Caption will be generated..." : "Write your caption..."}
+                        placeholder={reelAutoGenerateCaption && !reelCaption ? "Caption will be generated..." : "Write your caption..."}
                         rows={3}
                         className="post-textarea"
-                        disabled={reelAutoGenerateCaption}
+                        disabled={reelAutoGenerateCaption && !reelCaption}
                       />
                     </div>
                   </div>
