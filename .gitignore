@@ -1,0 +1,5 @@
+# Ignore certificate files
+*.pem
+/node_modules/
+# Ignore log files
+package-lock.json
