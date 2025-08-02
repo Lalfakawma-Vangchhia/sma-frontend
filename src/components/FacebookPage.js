@@ -80,6 +80,15 @@ function FacebookPage() {
   });
 
   const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '697225659875731';
+  
+  // Validate Facebook App ID
+  useEffect(() => {
+    if (!FACEBOOK_APP_ID || FACEBOOK_APP_ID === 'your_app_id_here') {
+      console.warn('⚠️ Facebook App ID not configured properly. Please set REACT_APP_FACEBOOK_APP_ID in your environment variables.');
+    } else {
+      console.log('✅ Facebook App ID configured:', FACEBOOK_APP_ID);
+    }
+  }, [FACEBOOK_APP_ID]);
 
   // Mobile detection utility
   const isMobile = () => window.innerWidth <= 768;
@@ -372,14 +381,23 @@ function FacebookPage() {
     setConnectionStatus('Loading Facebook SDK...');
 
     try {
+      console.log('🔄 Loading Facebook SDK with App ID:', FACEBOOK_APP_ID);
       await loadFacebookSDK(FACEBOOK_APP_ID);
 
-      if (!window.FB || typeof window.FB.login !== 'function') {
-        setConnectionStatus('Facebook SDK failed to load. Please refresh the page and try again.');
-        setIsConnecting(false);
-        return;
+      // Add more thorough checks
+      if (!window.FB) {
+        throw new Error('Facebook SDK not loaded - window.FB is undefined');
+      }
+      
+      if (typeof window.FB.init !== 'function') {
+        throw new Error('Facebook SDK not properly initialized - FB.init is not a function');
+      }
+      
+      if (typeof window.FB.login !== 'function') {
+        throw new Error('Facebook SDK login function not available - FB.login is not a function');
       }
 
+      console.log('✅ Facebook SDK loaded successfully');
       setConnectionStatus('Connecting to Facebook...');
 
       window.FB.login((response) => {
@@ -465,6 +483,14 @@ function FacebookPage() {
     } catch (error) {
       console.error('Facebook login error:', error);
       setConnectionStatus('Facebook login failed: ' + error.message);
+      setIsConnecting(false);
+      
+      // If it's an SDK loading issue, suggest a refresh
+      if (error.message.includes('SDK') || error.message.includes('init')) {
+        setTimeout(() => {
+          setConnectionStatus('Please refresh the page and try again. If the issue persists, check your internet connection.');
+        }, 2000);
+      }
     }
   };
 

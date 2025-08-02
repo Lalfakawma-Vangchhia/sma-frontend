@@ -16,21 +16,55 @@ export const loadFacebookSDK = (appId) => {
     // Set up the async init function before loading the script
     window.fbAsyncInit = function() {
       try {
-        window.FB.init({
-          appId: appId,
-          cookie: true,
-          xfbml: true,
-          version: 'v19.0'
-        });
+        console.log('🔄 Initializing Facebook SDK with App ID:', appId);
+        
+        if (!appId || appId === 'your_app_id_here') {
+          reject(new Error('Invalid Facebook App ID provided'));
+          return;
+        }
+
+        // Try with the latest version first, fallback to older versions if needed
+        const versions = ['v19.0', 'v18.0', 'v17.0'];
+        let initSuccess = false;
+        
+        for (const version of versions) {
+          try {
+            window.FB.init({
+              appId: appId,
+              cookie: true,
+              xfbml: true,
+              version: version
+            });
+            console.log(`✅ Facebook SDK initialized with version ${version}`);
+            initSuccess = true;
+            break;
+          } catch (versionError) {
+            console.warn(`⚠️ Failed to initialize with version ${version}:`, versionError);
+            continue;
+          }
+        }
+        
+        if (!initSuccess) {
+          throw new Error('Failed to initialize Facebook SDK with any supported version');
+        }
+
+        console.log('✅ Facebook SDK initialized successfully');
 
         // Wait a moment for initialization to complete
         setTimeout(() => {
-          if (window.FB.AppEvents) {
-            window.FB.AppEvents.logPageView();
+          try {
+            if (window.FB.AppEvents) {
+              window.FB.AppEvents.logPageView();
+            }
+            console.log('✅ Facebook SDK ready for use');
+            resolve(window.FB);
+          } catch (appEventsError) {
+            console.warn('⚠️ Facebook AppEvents failed, but SDK is ready:', appEventsError);
+            resolve(window.FB);
           }
-          resolve(window.FB);
-        }, 100);
+        }, 200);
       } catch (error) {
+        console.error('❌ Failed to initialize Facebook SDK:', error);
         reject(new Error('Failed to initialize Facebook SDK: ' + error.message));
       }
     };
