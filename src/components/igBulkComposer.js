@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-// import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import apiClient from '../services/apiClient';
 import { fileToBase64 } from './FacebookUtils';
@@ -7,7 +6,6 @@ import './igBulkComposer.css';
 import { useNavigate } from 'react-router-dom';
 
 function IgBulkComposer({ selectedAccount, onClose }) {
-  // const { user } = useAuth();
   const { addNotification } = useNotifications();
 
   // Strategy step state
@@ -877,46 +875,12 @@ function IgBulkComposer({ selectedAccount, onClose }) {
     console.log(`🗑️ Removed carousel images for row ${rowId}`);
   };
 
-  // const handleDuplicateRow = (rowId) => {
-  //   const rowToDuplicate = composerRows.find(row => row.id === rowId);
-  //   if (rowToDuplicate) {
-  //     const newRow = {
-  //       ...rowToDuplicate,
-  //       id: `row-${Date.now()}-${Math.random()}`,
-  //       scheduledDate: new Date(rowToDuplicate.scheduledDate).toISOString().split('T')[0],
-  //       postType: rowToDuplicate.postType ? rowToDuplicate.postType.toLowerCase() : 'photo'
-  //     };
-  //     setComposerRows(prev => [...prev, newRow]);
-  //   }
-  // };
-
-  // const handleDeleteRow = (rowId) => {
-  //   setComposerRows(prev => prev.filter(row => row.id !== rowId));
-  //   setSelectedRows(prev => prev.filter(id => id !== rowId));
-  // };
+ 
 
   const handleBulkDelete = () => {
     setComposerRows(prev => prev.filter(row => !selectedRows.includes(row.id)));
     setSelectedRows([]);
   };
-
-  // const handleTimeShift = (direction) => {
-  //   setComposerRows(prev =>
-  //     prev.map(row => {
-  //       if (selectedRows.includes(row.id)) {
-  //         const [hours, minutes] = row.scheduledTime.split(':');
-  //         let newHours = parseInt(hours) + (direction === 'forward' ? 1 : -1);
-  //         if (newHours < 0) newHours = 23;
-  //         if (newHours > 23) newHours = 0;
-  //         return {
-  //           ...row,
-  //           scheduledTime: `${newHours.toString().padStart(2, '0')}:${minutes}`
-  //         };
-  //       }
-  //       return row;
-  //     })
-  //   );
-  // };
 
   const handleDragStart = (rowId) => setDragStartRow(rowId);
   const handleDragOver = (e) => e.preventDefault();

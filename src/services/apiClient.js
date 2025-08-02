@@ -917,16 +917,14 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({
         page_id: pageId,
-        message: options.message,
-        image_url: options.image_url,
-        post_type: options.post_type || 'feed',
-        use_ai: options.use_ai || false,
-        prompt: options.prompt,
-        scheduled_time: options.scheduled_time,
-        carousel_images: options.carousel_images || [],
-        video_url: options.video_url,
-        location: options.location,
-        hashtags: options.hashtags
+        text_content: options.textContent,
+        content_prompt: options.contentPrompt,
+        image_url: options.imageUrl,
+        image_prompt: options.imagePrompt,
+        video_url: options.videoUrl,
+        post_type: options.postType || 'feed',
+        use_ai_text: options.useAIText || false,
+        use_ai_image: options.useAIImage || false
       }),
     });
   }
