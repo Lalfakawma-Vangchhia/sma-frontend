@@ -6,7 +6,7 @@ import BulkComposer from './BulkComposer';
 import AIGenerateTab from './AIGenerateTab';
 import ManualPostTab from './ManualPostTab';
 import AutomateTab from './AutomateTab';
-import { loadFacebookSDK, fileToBase64 } from '../services/facebookService';
+import { loadFacebookSDK, fileToBase64, resetFacebookSDK } from '../services/facebookService';
 import './FacebookPage.css';
 
 function FacebookPage() {
@@ -482,14 +482,28 @@ function FacebookPage() {
       });
     } catch (error) {
       console.error('Facebook login error:', error);
-      setConnectionStatus('Facebook login failed: ' + error.message);
       setIsConnecting(false);
       
-      // If it's an SDK loading issue, suggest a refresh
-      if (error.message.includes('SDK') || error.message.includes('init')) {
-        setTimeout(() => {
-          setConnectionStatus('Please refresh the page and try again. If the issue persists, check your internet connection.');
-        }, 2000);
+      // If it's an SDK initialization issue, try to reset and reload
+      if (error.message.includes('init') || error.message.includes('version') || error.message.includes('SDK')) {
+        console.log('🔄 Attempting to reset Facebook SDK due to initialization error');
+        resetFacebookSDK();
+        
+        setConnectionStatus('Facebook SDK initialization failed. Attempting to reset...');
+        
+        // Try one more time after reset
+        setTimeout(async () => {
+          try {
+            setConnectionStatus('Retrying Facebook SDK initialization...');
+            await loadFacebookSDK(FACEBOOK_APP_ID);
+            setConnectionStatus('Facebook SDK reset successful. Please try connecting again.');
+          } catch (retryError) {
+            console.error('Facebook SDK retry failed:', retryError);
+            setConnectionStatus('Facebook SDK initialization failed. Please refresh the page and try again.');
+          }
+        }, 1000);
+      } else {
+        setConnectionStatus('Facebook login failed: ' + error.message);
       }
     }
   };
@@ -1137,6 +1151,26 @@ function FacebookPage() {
                     </div>
                   )}
                 </button>
+                
+                {/* Reset button for SDK issues */}
+                {connectionStatus.includes('failed') || connectionStatus.includes('refresh') ? (
+                  <button
+                    onClick={() => {
+                      resetFacebookSDK();
+                      setConnectionStatus('Facebook SDK reset. Please try connecting again.');
+                    }}
+                    className="connect-button"
+                    style={{ 
+                      background: 'transparent', 
+                      border: '1px solid #1877f2', 
+                      color: '#1877f2',
+                      marginTop: '1rem',
+                      fontSize: '0.875rem'
+                    }}
+                  >
+                    Reset Facebook SDK
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : (

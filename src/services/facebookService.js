@@ -1,21 +1,61 @@
 // Facebook SDK and utility functions
 
 /**
+ * Reset Facebook SDK completely
+ */
+export const resetFacebookSDK = () => {
+  console.log('🔄 Resetting Facebook SDK completely');
+  
+  // Remove global FB object
+  if (window.FB) {
+    delete window.FB;
+  }
+  
+  // Remove fbAsyncInit
+  if (window.fbAsyncInit) {
+    delete window.fbAsyncInit;
+  }
+  
+  // Remove all Facebook SDK scripts
+  const scripts = document.querySelectorAll('script[src*="sdk.js"], script[id="facebook-jssdk"]');
+  scripts.forEach(script => script.remove());
+  
+  console.log('✅ Facebook SDK reset complete');
+};
+
+/**
  * Load Facebook SDK
  * @param {string} appId - Facebook App ID
  * @returns {Promise} - Promise that resolves when SDK is loaded
  */
 export const loadFacebookSDK = (appId) => {
   return new Promise((resolve, reject) => {
-    // Check if SDK is already loaded and initialized
-    if (window.FB && window.FB.init) {
+    // Check if SDK is already loaded and properly initialized
+    if (window.FB && window.FB.login && typeof window.FB.login === 'function') {
+      console.log('✅ Facebook SDK already loaded and ready');
       resolve(window.FB);
       return;
     }
+    
+    // Clean up any existing SDK state
+    if (window.FB) {
+      console.log('🔄 Cleaning up existing Facebook SDK state');
+      delete window.FB;
+    }
+    
+    if (window.fbAsyncInit) {
+      delete window.fbAsyncInit;
+    }
+
+    // Set up timeout to prevent hanging
+    const timeoutId = setTimeout(() => {
+      reject(new Error('Facebook SDK loading timeout - please refresh the page'));
+    }, 10000); // 10 second timeout
 
     // Set up the async init function before loading the script
     window.fbAsyncInit = function() {
       try {
+        clearTimeout(timeoutId);
         console.log('🔄 Initializing Facebook SDK with App ID:', appId);
         
         if (!appId || appId === 'your_app_id_here') {
@@ -23,37 +63,20 @@ export const loadFacebookSDK = (appId) => {
           return;
         }
 
-        // Try with the latest version first, fallback to older versions if needed
-        const versions = ['v19.0', 'v18.0', 'v17.0'];
-        let initSuccess = false;
+        // Initialize with a stable version
+        window.FB.init({
+          appId: appId,
+          cookie: true,
+          xfbml: true,
+          version: 'v18.0'  // Using v18.0 as it's more stable
+        });
         
-        for (const version of versions) {
-          try {
-            window.FB.init({
-              appId: appId,
-              cookie: true,
-              xfbml: true,
-              version: version
-            });
-            console.log(`✅ Facebook SDK initialized with version ${version}`);
-            initSuccess = true;
-            break;
-          } catch (versionError) {
-            console.warn(`⚠️ Failed to initialize with version ${version}:`, versionError);
-            continue;
-          }
-        }
-        
-        if (!initSuccess) {
-          throw new Error('Failed to initialize Facebook SDK with any supported version');
-        }
-
-        console.log('✅ Facebook SDK initialized successfully');
+        console.log('✅ Facebook SDK initialized with version v18.0');
 
         // Wait a moment for initialization to complete
         setTimeout(() => {
           try {
-            if (window.FB.AppEvents) {
+            if (window.FB && window.FB.AppEvents) {
               window.FB.AppEvents.logPageView();
             }
             console.log('✅ Facebook SDK ready for use');
@@ -62,18 +85,20 @@ export const loadFacebookSDK = (appId) => {
             console.warn('⚠️ Facebook AppEvents failed, but SDK is ready:', appEventsError);
             resolve(window.FB);
           }
-        }, 200);
+        }, 300);
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error('❌ Failed to initialize Facebook SDK:', error);
         reject(new Error('Failed to initialize Facebook SDK: ' + error.message));
       }
     };
 
-    // Check if script is already loading
-    if (document.querySelector('script[src*="sdk.js"]')) {
-      // Script is already loading, just wait for fbAsyncInit
-      return;
-    }
+    // Remove any existing Facebook SDK scripts
+    const existingScripts = document.querySelectorAll('script[src*="sdk.js"]');
+    existingScripts.forEach(script => {
+      console.log('🔄 Removing existing Facebook SDK script');
+      script.remove();
+    });
 
     // Load Facebook SDK script
     const script = document.createElement('script');
@@ -81,8 +106,15 @@ export const loadFacebookSDK = (appId) => {
     script.async = true;
     script.defer = true;
     script.crossOrigin = 'anonymous';
+    script.id = 'facebook-jssdk';
+
+    script.onload = () => {
+      console.log('✅ Facebook SDK script loaded successfully');
+    };
 
     script.onerror = (error) => {
+      clearTimeout(timeoutId);
+      console.error('❌ Failed to load Facebook SDK script:', error);
       reject(new Error('Failed to load Facebook SDK script'));
     };
 
@@ -287,6 +319,7 @@ export const validateFileSize = (file, type) => {
 
 const facebookService = {
   loadFacebookSDK,
+  resetFacebookSDK,
   fileToBase64,
   getFacebookLoginStatus,
   facebookLogin,
